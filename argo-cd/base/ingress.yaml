@@ -1,0 +1,22 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: argocd-server
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+    # Inbound CIDRs only allows traffic from datacenter / VPN
+    alb.ingress.kubernetes.io/inbound-cidrs: 213.159.62.28/32, 85.159.56.0/24, 213.105.125.224/29
+    # *ekm.svc certificate ARN
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-west-2:328373003584:certificate/b7abafe3-00e1-4845-b765-34108f65225f
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /*
+        backend:
+          serviceName: argocd-server
+          servicePort: 80
+    host: acme.com

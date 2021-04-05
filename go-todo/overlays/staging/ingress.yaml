@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: go-todo-staging
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+    # *.staging.ekmsvc.com certificate ARN
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-west-2:328373003584:certificate/6a33a217-aec0-4be9-9dcb-174c0453e779
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: go-todo
+                port:
+                  number: 8080
+      host: todo.staging.ekmsvc.com

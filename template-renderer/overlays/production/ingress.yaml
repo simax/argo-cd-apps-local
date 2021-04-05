@@ -1,0 +1,20 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: template-renderer
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+    # *.ekmsvc.com certificate ARN
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-west-2:328373003584:certificate/b7abafe3-00e1-4845-b765-34108f65225f
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /*
+            backend:
+              serviceName: template-renderer
+              servicePort: 80
+      host: renderer.ekmsvc.com

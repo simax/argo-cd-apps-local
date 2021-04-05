@@ -1,0 +1,119 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterWorkflowTemplate
+metadata:
+  name: container-image
+spec:
+  serviceAccountName: workflow
+  templates:
+    - name: build-kaniko-git
+      inputs:
+        parameters:
+          - name: repo_url
+          - name: repo_ref
+            value: refs/heads/master
+          - name: repo_commit_id
+            value: HEAD
+          - name: container_image
+          - name: container_tag
+      container:
+        image: gcr.io/kaniko-project/executor:debug
+        args:
+          - --context={{inputs.parameters.repo_url}}#{{inputs.parameters.repo_ref}}#{{inputs.parameters.repo_commit_id}}
+          - --destination={{inputs.parameters.container_image}}:{{inputs.parameters.container_tag}}
+        env:
+          - name: GIT_TOKEN
+            valueFrom: 
+              secretKeyRef:
+                name: github-access
+                key: token
+          - name: GIT_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: github-access
+                key: user
+        volumeMounts:
+          - name: docker-config
+            mountPath: /kaniko/.docker/
+
+---
+
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterWorkflowTemplate
+metadata:
+  name: promote
+spec:
+  serviceAccountName: workflow
+  templates:
+    - name: promote
+      inputs:
+        parameters:
+          # The environment that the build is to be promoted to
+          - name: environment
+          # The base URL of the image registry (Should be usually be 328373003584.dkr.ecr.eu-west-2.amazonaws.com)
+          - name: image_owner
+          # The path name of the image registry (Generally the applications name)
+          - name: image_name
+          # The sha of the git commit that the image is based on (also used as the tag for the image)
+          - name: tag
+          # The path of the application within this repository. Used when creating commits / pr
+          - name: application_path
+      script:
+        image: jackcaldwell/kustomize:0.0.2
+        command: [sh]
+        source: |
+          set -e
+          git clone https://$(cat /.github/token)@github.com/ekmsystems/argocd-apps
+          cd argocd-apps
+          sleep 1
+          git config user.name "$(cat /.github/user)"
+          git config user.email "$(cat /.github/email)"
+          yq eval -i '.spec.template.spec.containers[0].image = "{{inputs.parameters.image_owner}}/{{inputs.parameters.image_name}}:{{inputs.parameters.tag}}"' {{inputs.parameters.application_path}}/overlays/{{inputs.parameters.environment}}/deployment.yaml
+          git add {{inputs.parameters.application_path}}/overlays/{{inputs.parameters.environment}}/deployment.yaml
+          git commit -m "Upgraded {{inputs.parameters.application_path}} to build {{inputs.parameters.tag}} in environment {{inputs.parameters.environment}}"
+          git push -u origin master
+        volumeMounts:
+          - name: github-access
+            mountPath: /.github/
+
+---
+
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterWorkflowTemplate
+metadata:
+  name: request-promote
+spec:
+  serviceAccountName: workflow
+  templates:
+    - name: request-promote
+      inputs:
+        parameters:
+          # The environment that the build is to be promoted to
+          - name: environment
+          # The base URL of the image registry (Should be usually be 328373003584.dkr.ecr.eu-west-2.amazonaws.com)
+          - name: image_owner
+          # The path name of the image registry (Generally the applications name)
+          - name: image_name
+          # The sha of the git commit that the image is based on (also used as the tag for the image)
+          - name: tag
+          # The path of the application within this repository. Used when creating commits / pr
+          - name: application_path
+      script:
+        image: jackcaldwell/kustomize:0.0.2
+        command: [sh]
+        source: |
+          set -e
+          git clone https://$(cat /.github/token)@github.com/ekmsystems/argocd-apps
+          cd argocd-apps
+          sleep 1
+          git config user.name "$(cat /.github/user)"
+          git config user.email "$(cat /.github/email)"
+          yq eval -i '.spec.template.spec.containers[0].image = "{{inputs.parameters.image_owner}}/{{inputs.parameters.image_name}}:{{inputs.parameters.tag}}"' {{inputs.parameters.application_path}}/overlays/{{inputs.parameters.environment}}/deployment.yaml
+          git add {{inputs.parameters.application_path}}/overlays/{{inputs.parameters.environment}}/deployment.yaml
+          git commit -m "Upgraded {{inputs.parameters.application_path}} to build {{inputs.parameters.tag}} in environment {{inputs.parameters.environment}}"
+          git checkout -b "promote-{{inputs.parameters.application_path}}-{{inputs.parameters.tag}}-to-environment-{{inputs.parameters.environment}}"
+          git push -u origin promote-{{inputs.parameters.application_path}}-{{inputs.parameters.tag}}-to-environment-{{inputs.parameters.environment}}
+          curl -XPOST -H "Content-type: application/json" -H "Authorization: token $(cat /.github/token)" -d '{"head": "promote-{{inputs.parameters.application_path}}-{{inputs.parameters.tag}}-to-environment-{{inputs.parameters.environment}}", "base": "master", "title": "Upgraded {{inputs.parameters.application_path}} to build {{inputs.parameters.tag}} in environment {{inputs.parameters.environment}}"}' 'https://api.github.com/repos/ekmsystems/argocd-apps/pulls'
+        volumeMounts:
+          - name: github-access
+            mountPath: /.github/

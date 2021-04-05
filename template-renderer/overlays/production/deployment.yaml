@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: template-renderer
+  labels:
+    app: template-renderer
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: template-renderer
+  template:
+    metadata:
+      labels:
+        app: template-renderer
+    spec:
+      containers:
+        - name: template-renderer
+          image: "328373003584.dkr.ecr.eu-west-2.amazonaws.com/template-renderer:0.0.2"
+          ports:
+            - containerPort: 80
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+          resources:
+            limits:
+              cpu: 200m
+              memory: 512Mi
+          volumeMounts:
+            - name: secrets
+              mountPath: /app/secrets
+              readOnly: true
+      volumes:
+        - name: secrets
+          secret:
+            secretName: secret-appsettings-template-renderer

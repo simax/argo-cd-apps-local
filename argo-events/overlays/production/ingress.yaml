@@ -1,0 +1,38 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: github
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+    # *.ekmsvc.com certificate ARN
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-west-2:328373003584:certificate/b7abafe3-00e1-4845-b765-34108f65225f
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /orders-api
+            pathType: Prefix
+            backend:
+              service:
+                name: orders-api-eventsource-svc
+                port:
+                  number: 12000
+          - path: /go-todo
+            pathType: Prefix
+            backend:
+              service:
+                name: go-todo-eventsource-svc
+                port:
+                  number: 12000
+          - path: /template-renderer
+            pathType: Prefix
+            backend:
+              service:
+                name: template-renderer-eventsource-svc
+                port:
+                  number: 12000
+
+      host: webhook.ekmsvc.com

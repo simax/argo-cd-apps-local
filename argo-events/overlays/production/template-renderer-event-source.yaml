@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: template-renderer
+spec:
+  service:
+    ports:
+      - port: 12000
+        targetPort: 12000
+  github:
+    template-renderer:
+      owner: ekmsystems
+      repository: Tempest.TemplateRenderer
+      webhook:
+        endpoint: /template-renderer
+        port: "12000"
+        method: POST
+        url: https://webhook.ekmsvc.com
+      events:
+        - "push"
+      apiToken:
+        name: github-access
+        key: token
+      insecure: false
+      active: true
+      contentType: json
