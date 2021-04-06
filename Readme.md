@@ -91,7 +91,7 @@ spec:
   project: production
   source:
     path: go-todo/overlays/production
-    repoURL: ssh://git@github.com:simax/argo-cd-apps-local.git
+    repoURL: git@github.com:simax/argo-cd-apps-local.git
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
