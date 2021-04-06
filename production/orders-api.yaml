@@ -9,7 +9,7 @@ spec:
   project: production
   source:
     path: orders-api/overlays/production
-    repoURL: git@github.com:ekmsystems/argocd-apps.git
+    repoURL: git@github.com:simax/argo-cd-apps-local.git
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc

@@ -12,7 +12,7 @@ spec:
   project: default
   source:
     path: prometheus-stack
-    repoURL: git@github.com:ekmsystems/argocd-apps.git
+    repoURL: git@github.com:simax/argo-cd-apps-local.git
     targetRevision: HEAD
   syncPolicy:
     automated:
