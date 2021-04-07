@@ -9,7 +9,7 @@ spec:
   project: staging
   source:
     path: orders-api/overlays/staging
-    repoURL: git@github.com:simax/argo-cd-apps-local.git
+    repoURL: git@github.com:ekmsystems/argocd-apps.git
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
